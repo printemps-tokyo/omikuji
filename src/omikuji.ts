@@ -79,7 +79,9 @@ export function detectLang(env: Readonly<Record<string, string | undefined>>): L
  * Whether `input` is a real calendar date written as `YYYY-MM-DD`.
  * The string must match the format and round-trip through the calendar,
  * so impossible dates like `2026-02-30` or `2026-99-99` are rejected while
- * leap days such as `2028-02-29` are accepted.
+ * leap days such as `2028-02-29` are accepted. Any four-digit year works,
+ * including `0000`-`0099` (proleptic Gregorian; `Date.UTC` alone would map
+ * those years into the 1900s and break the round-trip).
  */
 export function isValidDate(input: string): boolean {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input);
@@ -87,7 +89,10 @@ export function isValidDate(input: string): boolean {
   const year = Number(match[1]);
   const month = Number(match[2]);
   const day = Number(match[3]);
-  const date = new Date(Date.UTC(year, month - 1, day));
+  // Start from a fixed epoch and set the full date explicitly: unlike
+  // Date.UTC, setUTCFullYear does not remap years 0-99 to 1900-1999.
+  const date = new Date(0);
+  date.setUTCFullYear(year, month - 1, day);
   return (
     date.getUTCFullYear() === year &&
     date.getUTCMonth() === month - 1 &&

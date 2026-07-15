@@ -108,6 +108,15 @@ describe("isValidDate", () => {
     expect(isValidDate("2000-02-29")).toBe(true);
   });
 
+  it("accepts years below 100 without remapping them into the 1900s", () => {
+    expect(isValidDate("0026-01-01")).toBe(true);
+    expect(isValidDate("0099-12-31")).toBe(true);
+    // Year 0 exists in the proleptic Gregorian calendar (and is a leap year).
+    expect(isValidDate("0000-01-01")).toBe(true);
+    expect(isValidDate("0000-02-29")).toBe(true);
+    expect(isValidDate("0026-02-30")).toBe(false);
+  });
+
   it("rejects Feb 29 in non-leap years", () => {
     expect(isValidDate("2026-02-29")).toBe(false);
     expect(isValidDate("1900-02-29")).toBe(false);
