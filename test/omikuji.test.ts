@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { drawOmikuji, dailySeed, todayString, shouldShow } from "../src/omikuji.js";
+import { drawOmikuji, dailySeed, todayString, shouldShow, detectLang, isValidDate } from "../src/omikuji.js";
 import { RANKS, CATEGORIES } from "../src/data.js";
 import { makeRng, pickWeighted } from "../src/rng.js";
 
@@ -56,6 +56,79 @@ describe("daily helpers", () => {
     expect(shouldShow(undefined, "2026-06-24")).toBe(true);
     expect(shouldShow("2026-06-23", "2026-06-24")).toBe(true);
     expect(shouldShow("2026-06-24", "2026-06-24")).toBe(false);
+  });
+});
+
+describe("detectLang", () => {
+  it("defaults to en when no locale variables are set", () => {
+    expect(detectLang({})).toBe("en");
+  });
+
+  it("detects ja from LANG", () => {
+    expect(detectLang({ LANG: "ja_JP.UTF-8" })).toBe("ja");
+  });
+
+  it("detects non-ja locales as en", () => {
+    expect(detectLang({ LANG: "en_US.UTF-8" })).toBe("en");
+    expect(detectLang({ LANG: "fr_FR.UTF-8" })).toBe("en");
+    expect(detectLang({ LANG: "C" })).toBe("en");
+  });
+
+  it("prefers LC_ALL over LC_MESSAGES and LANG", () => {
+    expect(detectLang({ LC_ALL: "ja_JP.UTF-8", LC_MESSAGES: "en_US.UTF-8", LANG: "en_US.UTF-8" })).toBe("ja");
+    expect(detectLang({ LC_ALL: "en_US.UTF-8", LC_MESSAGES: "ja_JP.UTF-8", LANG: "ja_JP.UTF-8" })).toBe("en");
+  });
+
+  it("prefers LC_MESSAGES over LANG", () => {
+    expect(detectLang({ LC_MESSAGES: "ja_JP.UTF-8", LANG: "en_US.UTF-8" })).toBe("ja");
+  });
+
+  it("skips empty values and falls through to the next variable", () => {
+    expect(detectLang({ LC_ALL: "", LC_MESSAGES: "", LANG: "ja_JP.UTF-8" })).toBe("ja");
+  });
+
+  it("is case-insensitive on the language tag", () => {
+    expect(detectLang({ LANG: "JA_JP.UTF-8" })).toBe("ja");
+  });
+
+  it("does not treat ja mid-string as Japanese", () => {
+    expect(detectLang({ LANG: "de_DE@ja" })).toBe("en");
+  });
+});
+
+describe("isValidDate", () => {
+  it("accepts real calendar dates", () => {
+    expect(isValidDate("2026-06-24")).toBe(true);
+    expect(isValidDate("2026-01-01")).toBe(true);
+    expect(isValidDate("2026-12-31")).toBe(true);
+  });
+
+  it("accepts leap days in leap years", () => {
+    expect(isValidDate("2028-02-29")).toBe(true);
+    expect(isValidDate("2000-02-29")).toBe(true);
+  });
+
+  it("rejects Feb 29 in non-leap years", () => {
+    expect(isValidDate("2026-02-29")).toBe(false);
+    expect(isValidDate("1900-02-29")).toBe(false);
+  });
+
+  it("rejects impossible month or day values", () => {
+    expect(isValidDate("2026-99-99")).toBe(false);
+    expect(isValidDate("2026-02-30")).toBe(false);
+    expect(isValidDate("2026-13-01")).toBe(false);
+    expect(isValidDate("2026-00-10")).toBe(false);
+    expect(isValidDate("2026-04-31")).toBe(false);
+    expect(isValidDate("2026-01-00")).toBe(false);
+  });
+
+  it("rejects strings that are not strictly YYYY-MM-DD", () => {
+    expect(isValidDate("2026-6-24")).toBe(false);
+    expect(isValidDate("2026/06/24")).toBe(false);
+    expect(isValidDate("20260624")).toBe(false);
+    expect(isValidDate("2026-06-24T00:00:00Z")).toBe(false);
+    expect(isValidDate("")).toBe(false);
+    expect(isValidDate("not-a-date")).toBe(false);
   });
 });
 

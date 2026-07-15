@@ -13,7 +13,7 @@ export { RANKS, CATEGORIES } from "./data.js";
 export { makeRng, pick, pickWeighted } from "./rng.js";
 export type { Rng } from "./rng.js";
 
-export { drawOmikuji, dailySeed, todayString, shouldShow } from "./omikuji.js";
+export { drawOmikuji, dailySeed, todayString, shouldShow, detectLang, isValidDate } from "./omikuji.js";
 export type { Fortune, AdviceLine } from "./omikuji.js";
 
 export { renderText, renderJson } from "./render.js";

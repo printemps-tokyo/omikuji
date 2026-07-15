@@ -63,3 +63,34 @@ export function todayString(now: Date): string {
 export function shouldShow(lastShown: string | undefined, todayKey: string): boolean {
   return lastShown !== todayKey;
 }
+
+/**
+ * Detect the default slip language from locale environment variables.
+ * Checks `LC_ALL`, then `LC_MESSAGES`, then `LANG` (empty values are skipped);
+ * a locale starting with "ja" (e.g. `ja_JP.UTF-8`) yields "ja", anything else
+ * (including no locale at all) yields "en". `--lang` always overrides this.
+ */
+export function detectLang(env: Readonly<Record<string, string | undefined>>): Lang {
+  const locale = env["LC_ALL"] || env["LC_MESSAGES"] || env["LANG"] || "";
+  return locale.toLowerCase().startsWith("ja") ? "ja" : "en";
+}
+
+/**
+ * Whether `input` is a real calendar date written as `YYYY-MM-DD`.
+ * The string must match the format and round-trip through the calendar,
+ * so impossible dates like `2026-02-30` or `2026-99-99` are rejected while
+ * leap days such as `2028-02-29` are accepted.
+ */
+export function isValidDate(input: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}

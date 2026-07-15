@@ -4,7 +4,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
-import { drawOmikuji, dailySeed, todayString, shouldShow } from "./omikuji.js";
+import { drawOmikuji, dailySeed, todayString, shouldShow, detectLang, isValidDate } from "./omikuji.js";
 import { renderJson, renderText } from "./render.js";
 import type { Lang } from "./data.js";
 
@@ -19,7 +19,8 @@ same result, and it changes tomorrow. Fully offline.
 Options:
   --name <name>     Personalize the draw (still stable per day)
   --date <date>     Draw for a specific date (YYYY-MM-DD) instead of today
-  --lang <ja|en>    Language of the slip (default: ja)
+  --lang <ja|en>    Language of the slip (default: from your locale; "ja" when
+                    LC_ALL/LC_MESSAGES/LANG starts with "ja", otherwise "en")
   --once            Print only once per day; later same-day runs print nothing.
                     Handy in your shell startup file.
   --json            Output JSON instead of the slip
@@ -78,11 +79,11 @@ async function main(): Promise<number> {
   }
 
   const date = values.date ?? todayString(new Date());
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    process.stderr.write(`error: --date must be YYYY-MM-DD (got "${date}")\n`);
+  if (!isValidDate(date)) {
+    process.stderr.write(`error: --date must be a real calendar date in YYYY-MM-DD form (got "${date}")\n`);
     return 1;
   }
-  const lang = (values.lang ?? "ja") as Lang;
+  const lang = (values.lang ?? detectLang(process.env)) as Lang;
   if (lang !== "ja" && lang !== "en") {
     process.stderr.write("error: --lang must be ja or en\n");
     return 1;

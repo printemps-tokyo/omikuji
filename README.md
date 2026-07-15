@@ -47,8 +47,9 @@ Then run `omikuji` (after `npm link`), or `node dist/cli.js` from the clone.
 ## Usage
 
 ```bash
-omikuji                       # today's fortune (Japanese)
-omikuji --lang en             # in English
+omikuji                       # today's fortune (language from your locale)
+omikuji --lang en             # force English
+omikuji --lang ja             # force Japanese
 omikuji --name alice          # personalized, still stable per day
 omikuji --date 2026-01-01     # draw for a specific date
 omikuji --json                # machine-readable
@@ -58,10 +59,17 @@ omikuji --json                # machine-readable
 | --- | --- | --- |
 | `--name <name>` | Personalize the draw (still stable per day) | — |
 | `--date <date>` | Draw for a specific date (`YYYY-MM-DD`) | today |
-| `--lang <ja\|en>` | Language of the slip | `ja` |
+| `--lang <ja\|en>` | Language of the slip | from locale (see below) |
 | `--once` | Print only once per day; later same-day runs print nothing | off |
 | `--json` | Output JSON instead of the slip | off |
 | `--no-color` | Disable ANSI colors | colors on a TTY |
+
+### Default language
+
+Without `--lang`, the language follows your locale: `LC_ALL`, then
+`LC_MESSAGES`, then `LANG` is checked, and a value starting with `ja`
+(e.g. `ja_JP.UTF-8`) selects Japanese; anything else selects English.
+`--lang ja|en` always overrides the detected default.
 
 ### Once a day in your shell
 
