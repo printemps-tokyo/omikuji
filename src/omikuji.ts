@@ -3,11 +3,16 @@ import {
   ADVICE,
   CATEGORIES,
   CATEGORY_LABELS,
+  EVENTS,
   LUCKY,
   RANKS,
+  SEASON_ADVICE,
+  SEASON_LABELS,
+  SEASON_LUCKY,
   type Category,
   type Lang,
   type RankDef,
+  type Season,
 } from "./data.js";
 
 /** One line of advice on the slip. */
@@ -17,18 +22,58 @@ export interface AdviceLine {
   text: string;
 }
 
+/** The seasonal part of the slip. */
+export interface SeasonLine {
+  season: Season;
+  label: string;
+  text: string;
+  /** A seasonal lucky item. */
+  item: string;
+}
+
+/** A fixed-date seasonal event that falls on the drawn day. */
+export interface EventLine {
+  label: string;
+  text: string;
+}
+
 /** A drawn fortune. */
 export interface Fortune {
   rank: RankDef;
   advice: AdviceLine[];
   lucky: { number: number; color: string; item: string; direction: string };
+  /** Present when the date is known (see `drawOmikuji`). */
+  season?: SeasonLine;
+  event?: EventLine;
+}
+
+/** The season of a `YYYY-MM-DD` date (Japan Meteorological Agency months). */
+export function seasonOf(date: string): Season {
+  const month = Number(date.slice(5, 7));
+  if (month >= 3 && month <= 5) return "spring";
+  if (month >= 6 && month <= 8) return "summer";
+  if (month >= 9 && month <= 11) return "autumn";
+  return "winter";
+}
+
+/** The fixed-date seasonal event on a `YYYY-MM-DD` date, if any. */
+export function eventOf(date: string, lang: Lang): EventLine | undefined {
+  const month = Number(date.slice(5, 7));
+  const day = Number(date.slice(8, 10));
+  const e = EVENTS.find((ev) => ev.month === month && day >= ev.from && day <= ev.to);
+  return e ? { label: e.label[lang], text: e.text[lang] } : undefined;
 }
 
 /**
  * Draw a fortune deterministically from a seed. The same seed always yields the
  * same fortune; the rank is chosen by weight and the advice tone follows it.
+ *
+ * `date` (`YYYY-MM-DD`) adds the seasonal line and the day's event. When it is
+ * omitted, a seed that starts with a valid date (as `dailySeed` builds it) is
+ * used. The seasonal draws come after all the others, so adding them did not
+ * change the rank, advice or lucky items any date already had.
  */
-export function drawOmikuji(seed: string, lang: Lang): Fortune {
+export function drawOmikuji(seed: string, lang: Lang, date?: string): Fortune {
   const rng = makeRng(seed);
   const rank = pickWeighted(
     rng,
@@ -45,7 +90,20 @@ export function drawOmikuji(seed: string, lang: Lang): Fortune {
     item: pick(rng, LUCKY.items[lang]),
     direction: pick(rng, LUCKY.directions[lang]),
   };
-  return { rank, advice, lucky };
+  const fortune: Fortune = { rank, advice, lucky };
+  const day = date ?? seed.slice(0, 10);
+  if (isValidDate(day)) {
+    const season = seasonOf(day);
+    fortune.season = {
+      season,
+      label: SEASON_LABELS[season][lang],
+      text: pick(rng, SEASON_ADVICE[season][rank.tone][lang]),
+      item: pick(rng, SEASON_LUCKY[season][lang]),
+    };
+    const event = eventOf(day, lang);
+    if (event) fortune.event = event;
+  }
+  return fortune;
 }
 
 /** The seed for a given local date (`YYYY-MM-DD`), optionally per name. */

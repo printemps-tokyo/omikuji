@@ -105,3 +105,141 @@ export const LUCKY = {
     en: ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
   },
 } satisfies Record<string, Record<Lang, string[]>>;
+
+/**
+ * Seasons by month, as the Japan Meteorological Agency counts them: spring is
+ * March-May, summer June-August, autumn September-November, winter
+ * December-February. The slip follows the Japanese calendar everywhere.
+ */
+export const SEASONS = ["spring", "summer", "autumn", "winter"] as const;
+export type Season = (typeof SEASONS)[number];
+
+export const SEASON_LABELS: Record<Season, Record<Lang, string>> = {
+  spring: { ja: "春", en: "Spring" },
+  summer: { ja: "夏", en: "Summer" },
+  autumn: { ja: "秋", en: "Autumn" },
+  winter: { ja: "冬", en: "Winter" },
+};
+
+/** Seasonal advice per tone, in each language. */
+export const SEASON_ADVICE: Record<Season, Record<Tone, Record<Lang, string[]>>> = {
+  spring: {
+    good: {
+      ja: ["新しい出会いに恵まれる", "始めたことが芽吹く", "花見の席に良い知らせ", "早起きが運を開く"],
+      en: ["New faces bring luck.", "What you start takes root.", "Good news under the blossoms.", "Rise early to open your luck."],
+    },
+    bad: {
+      ja: ["気の緩みに注意", "新生活の疲れを溜めるな", "寝不足に用心", "約束は控えめに"],
+      en: ["Don't let your guard down.", "Don't let new-season fatigue pile up.", "Mind your sleep.", "Promise less for now."],
+    },
+  },
+  summer: {
+    good: {
+      ja: ["遠出が吉", "水辺で運気上昇", "思い切りが実を結ぶ", "夕涼みに良縁あり"],
+      en: ["A trip is lucky.", "Luck rises near water.", "Boldness pays off.", "A cool evening brings a good match."],
+    },
+    bad: {
+      ja: ["暑さで判断が鈍る", "冷たい物の取りすぎに注意", "夜更かしを控えよ", "日差しと油断に用心"],
+      en: ["The heat dulls judgment.", "Go easy on cold drinks.", "Avoid late nights.", "Beware the sun and carelessness."],
+    },
+  },
+  autumn: {
+    good: {
+      ja: ["努力が実る季節", "読書が道を開く", "旬の味覚で運気上昇", "月を眺めて心を整えよ"],
+      en: ["Effort bears fruit this season.", "Reading opens a path.", "Seasonal food lifts your luck.", "Calm your mind under the moon."],
+    },
+    bad: {
+      ja: ["物思いが過ぎる", "食べ過ぎに注意", "朝晩の冷えに用心", "迷ったら先送りせよ"],
+      en: ["Don't brood too long.", "Beware of overeating.", "Mind the chilly mornings.", "When in doubt, wait."],
+    },
+  },
+  winter: {
+    good: {
+      ja: ["静かに力を蓄える時", "温かい縁に恵まれる", "計画を立てれば吉", "鍋を囲めば和が生まれる"],
+      en: ["Quietly gather your strength.", "Warm ties come your way.", "Planning ahead is lucky.", "A shared hot pot brings harmony."],
+    },
+    bad: {
+      ja: ["冷えと乾燥に注意", "出費は計画的に", "閉じこもりすぎるな", "予定を詰め込むな"],
+      en: ["Beware of cold and dry air.", "Plan your spending.", "Don't shut yourself in.", "Don't overpack your schedule."],
+    },
+  },
+};
+
+/** A seasonal lucky item per season. */
+export const SEASON_LUCKY: Record<Season, Record<Lang, string[]>> = {
+  spring: {
+    ja: ["桜餅", "新しいノート", "若草色のハンカチ", "菜の花"],
+    en: ["sakura mochi", "a new notebook", "a light green handkerchief", "rapeseed blossoms"],
+  },
+  summer: {
+    ja: ["風鈴", "うちわ", "麦茶", "かき氷"],
+    en: ["a wind chime", "a paper fan", "barley tea", "shaved ice"],
+  },
+  autumn: {
+    ja: ["栗", "紅葉", "月見団子", "文庫本"],
+    en: ["chestnuts", "autumn leaves", "moon-viewing dumplings", "a paperback"],
+  },
+  winter: {
+    ja: ["手袋", "みかん", "湯たんぽ", "柚子"],
+    en: ["gloves", "a mandarin orange", "a hot-water bottle", "yuzu"],
+  },
+};
+
+/** A seasonal event on a fixed date (month, first day, last day). */
+export interface EventDef {
+  month: number;
+  from: number;
+  to: number;
+  label: Record<Lang, string>;
+  text: Record<Lang, string>;
+}
+
+/**
+ * Seasonal events whose date never moves. Days that depend on the solar
+ * terms (setsubun, the equinox weeks) or on the region (obon) are left out
+ * rather than guessed.
+ */
+export const EVENTS: EventDef[] = [
+  {
+    month: 1,
+    from: 1,
+    to: 3,
+    label: { ja: "正月三が日", en: "New Year" },
+    text: { ja: "一年の計は元旦にあり", en: "The year's plan is made on its first day." },
+  },
+  {
+    month: 3,
+    from: 3,
+    to: 3,
+    label: { ja: "ひな祭り", en: "Hinamatsuri" },
+    text: { ja: "健やかな成長を願う日", en: "A day to wish for healthy growth." },
+  },
+  {
+    month: 5,
+    from: 5,
+    to: 5,
+    label: { ja: "こどもの日", en: "Children's Day" },
+    text: { ja: "遊び心が運を呼ぶ", en: "A playful heart calls in luck." },
+  },
+  {
+    month: 7,
+    from: 7,
+    to: 7,
+    label: { ja: "七夕", en: "Tanabata" },
+    text: { ja: "願いは短冊に書くと吉", en: "Write your wish on a paper strip." },
+  },
+  {
+    month: 11,
+    from: 15,
+    to: 15,
+    label: { ja: "七五三", en: "Shichi-Go-San" },
+    text: { ja: "成長を祝えば福が来る", en: "Celebrating growth brings fortune." },
+  },
+  {
+    month: 12,
+    from: 31,
+    to: 31,
+    label: { ja: "大晦日", en: "New Year's Eve" },
+    text: { ja: "一年の厄を払い新年を待て", en: "Shake off the year and await the new one." },
+  },
+];

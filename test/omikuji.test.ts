@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { drawOmikuji, dailySeed, todayString, shouldShow, detectLang, isValidDate } from "../src/omikuji.js";
-import { RANKS, CATEGORIES } from "../src/data.js";
+import {
+  drawOmikuji,
+  dailySeed,
+  todayString,
+  shouldShow,
+  detectLang,
+  isValidDate,
+  seasonOf,
+  eventOf,
+} from "../src/omikuji.js";
+import { RANKS, CATEGORIES, SEASON_ADVICE } from "../src/data.js";
 import { makeRng, pickWeighted } from "../src/rng.js";
 
 describe("drawOmikuji", () => {
@@ -153,5 +162,50 @@ describe("pickWeighted", () => {
     }
     // b has 90% weight; expect a large majority (allow slack).
     expect(bCount).toBeGreaterThan(800);
+  });
+});
+
+describe("seasons and events", () => {
+  it("maps months to seasons the way JMA counts them", () => {
+    expect(seasonOf("2026-02-28")).toBe("winter");
+    expect(seasonOf("2026-03-01")).toBe("spring");
+    expect(seasonOf("2026-05-31")).toBe("spring");
+    expect(seasonOf("2026-06-01")).toBe("summer");
+    expect(seasonOf("2026-09-01")).toBe("autumn");
+    expect(seasonOf("2026-11-30")).toBe("autumn");
+    expect(seasonOf("2026-12-01")).toBe("winter");
+  });
+
+  it("finds fixed-date events only on their days", () => {
+    expect(eventOf("2026-07-07", "ja")?.label).toBe("七夕");
+    expect(eventOf("2026-01-03", "en")?.label).toBe("New Year");
+    expect(eventOf("2026-01-04", "en")).toBeUndefined();
+    expect(eventOf("2026-12-31", "ja")?.label).toBe("大晦日");
+    expect(eventOf("2026-02-03", "ja")).toBeUndefined();
+  });
+
+  it("adds the season from the seed's date without changing the other draws", () => {
+    const f = drawOmikuji(dailySeed("2026-07-07", "alice"), "en");
+    expect(f.season?.season).toBe("summer");
+    expect(f.season?.label).toBe("Summer");
+    expect(f.event?.label).toBe("Tanabata");
+    // Values drawn before seasons existed (omikuji 0.1.0) for this seed.
+    expect(f.rank.ja).toBe("小吉");
+    expect(f.lucky).toEqual({ number: 23, color: "yellow", item: "a pen", direction: "N" });
+  });
+
+  it("follows the rank's tone for the seasonal advice", () => {
+    for (let i = 0; i < 50; i++) {
+      const f = drawOmikuji(`2026-04-${String((i % 28) + 1).padStart(2, "0")}|n${i}`, "ja");
+      const pool = SEASON_ADVICE.spring[f.rank.tone].ja;
+      expect(pool).toContain(f.season?.text);
+    }
+  });
+
+  it("leaves the season out when no date is known", () => {
+    const f = drawOmikuji("seed-x", "ja");
+    expect(f.season).toBeUndefined();
+    const g = drawOmikuji("seed-x", "ja", "2026-10-10");
+    expect(g.season?.season).toBe("autumn");
   });
 });

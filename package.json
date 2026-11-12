@@ -1,6 +1,6 @@
 {
   "name": "@printemps-tokyo/omikuji",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Draw a deterministic daily Japanese fortune (omikuji) in your terminal. Zero-dependency CLI.",
   "type": "module",
   "license": "MIT",
